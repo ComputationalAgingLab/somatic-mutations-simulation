@@ -284,7 +284,7 @@ def find_time_for_survival(target_s, km_t, km_s):
 def save_km_to_csv(filename, times, survs, lower, upper, median, na):
     df = pd.DataFrame({
         "time": times,
-        "survival": survs,
+        "S_organ(t)": survs,
         "lower_CI": lower,
         "upper_CI": upper,
         "Nelson-Aalen": na
@@ -368,7 +368,7 @@ def save_trajectory_plots(outdir, label, ts, pct_B, pct_P):
                         os.path.join(outdir, f"P_{label}_log.png"))
 
 
-def run_pipeline_compare_fixed(organ="liver", n_km=2000, n_traj=400, t_max=200_000,
+def run_pipeline_compare_fixed_model_c(organ="liver", n_km=2000, n_traj=400, t_max=200_000,
                                n_workers=4, save_traces=100, seed=123, outdir="results",
                                n_common_points=10000):
     os.makedirs(outdir, exist_ok=True)
@@ -505,7 +505,7 @@ def run_pipeline_compare_fixed(organ="liver", n_km=2000, n_traj=400, t_max=200_0
 
 if __name__ == "__main__":
     outdir = "Model_IIIC_Lungs"
-    results, ts = run_pipeline_compare_fixed(
+    results, ts = run_pipeline_compare_fixed_model_c(
         organ="lungs",
         n_km=1_000_000,
         n_traj=5_000,

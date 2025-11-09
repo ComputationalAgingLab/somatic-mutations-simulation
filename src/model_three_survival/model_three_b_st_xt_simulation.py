@@ -274,7 +274,7 @@ def kaplan_meier(event_times, censored_mask):
 def save_km_to_csv(filename, na, times, survs, lower, upper, median):
     df = pd.DataFrame({
         "time": times,
-        "survival": survs,
+        "S_organ(t)": survs,
         "lower_CI": lower,
         "upper_CI": upper,
         "Nelson-Aalen": na
@@ -435,7 +435,7 @@ def save_combined_survival(outdir, label, km_t, km_s, km_s_ci, hazard_rate):
 
     print(f"Saved combined survival plot+CSV: {plot_path}, {csv_path}")
 
-def run_pipeline_compare_fixed(organ_x="liver", organ_s="LPC", n_km=2000, n_traj=400, t_max=200_000,
+def run_pipeline_compare_fixed_model_b(organ_x="liver", organ_s="LPC", n_km=2000, n_traj=400, t_max=200_000,
                                n_workers=4, save_traces=100, seed=123, outdir="results",
                                hazard_rate=1/8e9, n_common_points=10000):
     
@@ -563,7 +563,7 @@ def run_pipeline_compare_fixed(organ_x="liver", organ_s="LPC", n_km=2000, n_traj
 
 if __name__ == "__main__":
     outdir = "Model_IIIB_Liver_LPC"
-    results, ts_common = run_pipeline_compare_fixed(
+    results, ts_common = run_pipeline_compare_fixed_model_b(
         organ_x="liver",
         organ_s="LPC",
         n_km=1_000_000,
