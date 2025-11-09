@@ -1,5 +1,5 @@
-from . import calculation
-from . import analysis
-from . import plotting
+from . import hazard_simulation
+from . import hazard_simulation
+from . import hazard_simulation
 
-__all__ = ['calculation', 'analysis', 'plotting']
+__all__ = ['hazard_simulation', 'hazard_simulation', 'hazard_simulation']
