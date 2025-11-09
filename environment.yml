@@ -1,0 +1,10 @@
+name: somamut
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python==3.12.7
+  - pip=25.2
+  - pip:
+          - -e .[notebooks]
+prefix: /home/vivis/miniconda3/envs/somamut
