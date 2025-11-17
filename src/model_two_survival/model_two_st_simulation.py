@@ -12,19 +12,19 @@ class Config:
     def __init__(self, 
                  organ: str, 
                  mu_distribution: str = "lognormal", 
+                 lambda_bg : float = 0.0016133681587490935,
+                 N : float | int = 8e9,
+                 time_max: float | int = 20_000,
+                 time_points: int = 20_000,
                  mc_samples: int = 10_000):
         
         self.organ = organ.lower()
         self.mu_distribution = mu_distribution
         self.mc_samples = mc_samples
-
-        if self.organ not in ["liver", "lung", "brain", "heart"]:
-            raise ValueError("This organ is not available for the calculation.")
-
-        if self.organ in ["brain", "heart"]:
-            print("Exponential decay model is being simulated.")
-        else:
-            print("Model with self-renewal is being simulated.")
+        self.N = N
+        self.time_max = time_max
+        self.time_points = time_points
+        self.lambda_bg = lambda_bg
 
     def get_vals(self) -> Dict:
         values = {
@@ -88,18 +88,17 @@ class Config:
             "x0_mean": x0_mean,
             "x0_std": x0_std,
             "x_c": x_c,
-            "mu_normal": x0_mean,
-            "sigma_normal": x0_std,
+            #"mu_normal": x0_mean,
+            #"sigma_normal": x0_std,
             "mu_lognormal": mu_lognormal,
             "sigma_lognormal": sigma_lognormal,
-            "lambda_bg": 0.0016133681587490935,
-            "N": 8e9,
-            "time_max": 20_000,
-            "time_points": 20_000,
-            "debug": False,
+            "lambda_bg": self.lambda_bg,
+            "N": self.N,
+            "time_max": self.time_max,
+            "time_points": self.time_points,
             "mu_distribution": self.mu_distribution,
             "mc_samples": self.mc_samples,
-            "gh_nodes": 80,
+            #"gh_nodes": 80,
         }
 
 _precomputed_mus = {}

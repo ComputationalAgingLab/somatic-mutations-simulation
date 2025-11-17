@@ -532,6 +532,7 @@ def run_pipeline_compare_fixed_model_b(organ_x="liver", organ_s="LPC", n_km=2000
                 "P_mean": meanP, "P_std": stdP,
                 "P_min": np.maximum(meanP - stdP, 0.0), "P_max": meanP + stdP
             })
+            
             traj_csv_path = os.path.join(outdir, f"trajectories_{organ_x}_{organ_s}_{dist}.csv")
             df_traj.to_csv(traj_csv_path, index=False)
             print(f"Saved trajectories CSV (mean/std): {traj_csv_path}")

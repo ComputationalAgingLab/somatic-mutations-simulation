@@ -191,7 +191,6 @@ def monte_carlo_parallel(n_runs, initial_cond, param_fixed, param_specs, crit,
                 print(f"[{mu_distribution}] {completed}/{n_runs} done")
     return death_times, traces
 
-
 def kaplan_meier(event_times, censored_mask):
     """
     Returns km times, survival, lower CI, upper CI, median.
