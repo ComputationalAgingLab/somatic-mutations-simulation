@@ -5,10 +5,10 @@ This repository contains code and all of the calculations from the paper: LINK T
 ## Model I | Constant hazard rate
 
 
-## Model II | Cell death
+## Model II | Cell death without self-renewal
 
 ## Model IIIA | Cell death and replication of somatic cells
 
 ## Model IIIB | Death and replication of somatic and stem cells
 
-## Model IIIC | Death of differentiating stem cells with limited proliferative potential
+## Model IIIC | Death of differentiating lung basal cells with limited proliferative potential
