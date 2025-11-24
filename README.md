@@ -3,6 +3,7 @@
 This repository contains code and all of the calculations from the paper: LINK TO BE ADDED
 
 ## Description (TO BE UPDATED)
+![alt text](https://github.com/ComputationalAgingLab/somatic-mutations-simulation/blob/main/graphabstract.jpg "Graphical abstract")
 This repository contains the code and calculations for dynamical systems models of somatic mutation accumulation in tissues.  
 We have developed an incremental approach for the evaluation of somatic mutations impact on the aging process, in which multiple models, that are gradually becoming more complex, allow us to model individual tissue aging trajectory based on the several biological parameters. 
 
