@@ -1,7 +1,6 @@
 # Dynamical system modelling of somatic mutations accumulation 
 
-This repository contains code and all of the calculations from the paper: LINK TO BE ADDED
-
+This repository contains code and all of the calculations from the paper: [LINK to the preprint](https://www.biorxiv.org/content/10.1101/2025.11.23.689982v1)
 ## Description (TO BE UPDATED)
 ![alt text](https://github.com/ComputationalAgingLab/somatic-mutations-simulation/blob/main/graphabstract.jpg "Graphical abstract")
 This repository contains the code and calculations for dynamical systems models of somatic mutation accumulation in tissues.  
