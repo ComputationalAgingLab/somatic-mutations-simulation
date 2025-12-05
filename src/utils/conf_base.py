@@ -5,7 +5,6 @@ class Config:
     def __init__(self, 
                  organ: str = "liver",
                  organ_s: str | None = None,
-                 mu_distribution: str = "lognormal", 
                  lambda_bg : float = 0.0016133681587490935,
                  N : float | int = 8e9,
                  time_max: float | int = 20_000,
@@ -15,18 +14,13 @@ class Config:
         Basic config class for model initialization
 
         ** Args **
-
-        For model III:
         - organ : organ to simulate.
         - organ_s : for model IIIB, choosing the LPC if needed.
-
-        For Model II:
-        - mu_distribution: the distribution of mu parameter | TODO: remove
         - lambda_bg: background hazard rate
         - N: for the threshold (1/N)
         - time_max: max time for simulation
         - time_points: num of time points to sample
-        - mc_samples: Monte-Carlo runs for expectation estimation
+        - mc_samples: Monte-Carlo runs
         """
         self.organ = organ.lower()
         self.organ_s = organ_s
@@ -35,7 +29,6 @@ class Config:
         self.mc_samples = mc_samples
         self.time_points = time_points
         self.time_max = time_max
-        self.mu_distribution = mu_distribution
 
         self.values = {
             'liver':{
@@ -159,7 +152,19 @@ class Config:
             param_specs["mu_s"] = (mu_s_mean, mu_s_std)
             param_specs["Q"] = (conf_s["K"]["mean"], conf_s["K"]["se"])
 
-        return param_fixed, param_specs, initial_cond, x_crit
+        #return param_fixed, param_specs, initial_cond, x_crit
+        return {
+            "organ": self.organ,
+            "fixed": param_fixed,
+            "sampled": param_specs,
+            "initial": initial_cond,
+            "x_c": x_crit,
+            "lambda_bg": self.lambda_bg,
+            "N": self.N,
+            "time_max": self.time_max,
+            "time_points": self.time_points,
+            "mc_samples": self.mc_samples,
+        }
     
     def _get_params_model_two(self) -> Dict:
         conf = self.values[self.organ]
@@ -191,7 +196,6 @@ class Config:
             "N": self.N,
             "time_max": self.time_max,
             "time_points": self.time_points,
-            "mu_distribution": self.mu_distribution,
             "mc_samples": self.mc_samples,
         }
     

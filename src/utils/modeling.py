@@ -4,7 +4,7 @@ from scipy.interpolate import UnivariateSpline
 
 import os
 
-def ffill_data(path: str, save_path: str) -> None:
+def ffill_data(path: str | None, df: pd.DataFrame, save_path: str) -> None:
     """
     Function to postprocess the Kaplan-Meier output from model IIIA and IIIC
 
@@ -18,7 +18,9 @@ def ffill_data(path: str, save_path: str) -> None:
     # Baseline hazard
     l = 0.0016133681587490935
 
-    df = pd.read_csv(path)
+    if path:
+        df = pd.read_csv(path)
+
     event_times = df['time'].values
 
     # Filling regular grid
@@ -39,7 +41,7 @@ def ffill_data(path: str, save_path: str) -> None:
     dense["S_combined(t)"] = dense["survival"] * np.exp(-l * dense["time"])
     dense["S_baseline(t)"] = np.exp(-l * dense["time"])
 
-    dense.to_csv(save_path)
+    dense.to_csv(save_path, index=False)
 
 def frechet_hoeffding(data_brain, 
                       data_heart, 
@@ -128,11 +130,12 @@ def frechet_hoeffding(data_brain,
 
     df_times.to_csv(save_path)
 
-def ffill_data_na(path):
+def ffill_data_na(path: str | None, df: pd.Series | pd.DataFrame):
     """
     Utility function for Nelson-Aalen estimate from Model III smoothing
     """
-    df = pd.read_csv(path)
+    if path:
+        df = pd.read_csv(path)
     
     t_max = df['time'].max()
     regular_grid = np.arange(0, np.floor(t_max) + 1, 1)
@@ -144,8 +147,12 @@ def ffill_data_na(path):
     
     return result
 
-def smooth_lambdas(path, eps=1e-4, k=5):
-    regular = ffill_data_na(path)
+def smooth_lambdas(path: str | None, df: pd.Series | pd.DataFrame, eps=1e-4, k=5):
+
+    if path:
+        regular = ffill_data_na(path)
+    else:
+        regular = ffill_data_na(df=df)
 
     regular["lambda"] = np.gradient(regular["Nelson-Aalen"], regular["time"])
     regular = regular[(regular["lambda"]>=eps)]

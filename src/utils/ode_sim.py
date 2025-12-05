@@ -39,16 +39,13 @@ def make_event_zero():
 ### Monte-Carlo single run ###
 
 def single_run_worker(i, seed, initial_cond, param_fixed, param_specs, t_max,
-                      save_trace_flag, mu_distribution, x_crit,
+                      save_trace_flag, x_crit,
                       rhs_factory, organ_s):
     rng = np.random.default_rng(seed)
 
     sampled = {}
     for name, (mean, se) in param_specs.items():
-        if mu_distribution == "lognormal":
-            sampled[name] = sample_lognormal_from_mean_se(mean, se, rng)
-        else:
-            raise ValueError("Only lognormal is implemented")
+        sampled[name] = sample_lognormal_from_mean_se(mean, se, rng)
 
     params = dict(param_fixed)
     params.update(sampled)
@@ -101,12 +98,12 @@ def single_run_worker(i, seed, initial_cond, param_fixed, param_specs, t_max,
 ### Monte-Carlo wrapper ###
 
 def monte_carlo_parallel(n_runs, initial_cond, param_fixed, param_specs, crit,
-                         t_max, n_workers, save_traces, mu_distribution, seed):
+                         t_max, rhs_factory, organ_s, n_workers, save_traces, seed):
     base_seed = int(seed) if seed is not None else np.random.randint(0, 2**31-1)
     args = []
     for i in range(n_runs):
         args.append((i, base_seed + i, initial_cond, param_fixed, param_specs,
-                     t_max, (i < save_traces), mu_distribution, crit))
+                     t_max, (i < save_traces), crit, rhs_factory, organ_s))
 
     death_times = np.full(n_runs, np.nan)
     traces = {}
@@ -120,5 +117,5 @@ def monte_carlo_parallel(n_runs, initial_cond, param_fixed, param_specs, crit,
                 traces[idx] = trace
             completed += 1
             if n_runs >= 20 and completed % max(1, n_runs // 20) == 0:
-                print(f"[{mu_distribution}] {completed}/{n_runs} done")
+                print(f"{completed}/{n_runs} done")
     return death_times, traces
