@@ -9,6 +9,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 try:
     from src.run_model_ii import run_model_ii
     from src.run_model_iii import run_model_iii
+    from src.model_ii_hazard import compute_hazard
 except ImportError as e:
     print(f"ImportError: {e}")
     sys.exit(1)
@@ -38,6 +39,18 @@ def main():
     parser.add_argument("--n_workers", type=int, default=4)
     parser.add_argument("--save_traces", type=int, default=100,
                         help="How many full traces to save (Model III only)")
+    
+    parser.add_argument(
+        "--compute_hazard",
+        action="store_true",
+        help="Also compute and save hazard rates for Model II organs (brain/heart)"
+    )
+
+    parser.add_argument(
+        "--sparse_hazard",
+        action="store_true",
+        help="Use sparse time grid for hazards in Model II or not. Recommended True for heart"
+    )
 
     args = parser.parse_args()
 
@@ -57,6 +70,16 @@ def main():
                 outdir=os.path.join(args.outdir, "model_ii"),
                 N=args.N
             )
+            if args.compute_hazard:
+                    compute_hazard(
+                        organ=organ,
+                        n_mc=args.n_mc,
+                        t_max=args.t_max,
+                        time_points=args.n_common_points,
+                        sparse=False,
+                        outdir=os.path.join(args.outdir, "hazard_model_ii"),
+                        seed=args.seed
+                    )
         else:
             if organ_s and organ != "liver":
                 parser.error("--organ_s only valid for liver")

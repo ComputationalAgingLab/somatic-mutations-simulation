@@ -4,7 +4,7 @@ from scipy.interpolate import UnivariateSpline
 
 import os
 
-def ffill_data(path: str | None, df: pd.DataFrame, save_path: str) -> None:
+def ffill_data(save_path: str, df: pd.DataFrame | None = None, path: str | None = None) -> None:
     """
     Function to postprocess the Kaplan-Meier output from model IIIA and IIIC
 
@@ -21,7 +21,7 @@ def ffill_data(path: str | None, df: pd.DataFrame, save_path: str) -> None:
     if path:
         df = pd.read_csv(path)
 
-    event_times = df['time'].values
+    event_times = df["time"].values
 
     # Filling regular grid
     t_max = event_times.max()
@@ -30,15 +30,15 @@ def ffill_data(path: str | None, df: pd.DataFrame, save_path: str) -> None:
     full_time = np.union1d(regular_grid, event_times)
     full_time.sort()
 
-    dense = pd.DataFrame({'time': full_time})
+    dense = pd.DataFrame({"time": full_time})
 
-    dense = dense.merge(df, on='time', how='left')
+    dense = dense.merge(df, on="time", how="left")
 
-    # Saving data
-    cols = ['survival', 'lower_CI', 'upper_CI']
+    # Saving data with combined
+    cols = ["S_organ(t)", "lower_CI", "upper_CI"]
     dense[cols] = dense[cols].ffill()
 
-    dense["S_combined(t)"] = dense["survival"] * np.exp(-l * dense["time"])
+    dense["S_combined(t)"] = dense["S_organ(t)"] * np.exp(-l * dense["time"])
     dense["S_baseline(t)"] = np.exp(-l * dense["time"])
 
     dense.to_csv(save_path, index=False)
@@ -46,7 +46,7 @@ def ffill_data(path: str | None, df: pd.DataFrame, save_path: str) -> None:
 def frechet_hoeffding(data_brain, 
                       data_heart, 
                       data_lungs,
-                      save_path: str) -> None:
+                      save_path: str | None = None) -> None:
     """
     Function for Frech\'et-Hoeffding bounds estimation.
 
@@ -128,26 +128,29 @@ def frechet_hoeffding(data_brain,
 
     df_times = df_times.rename(columns={"index":"percentile"})
 
-    df_times.to_csv(save_path)
+    if save_path:
+        df_times.to_csv(save_path)
 
-def ffill_data_na(path: str | None, df: pd.Series | pd.DataFrame):
+    return df_times
+
+def ffill_data_na(path: str | None = None, df: pd.Series | pd.DataFrame = None):
     """
     Utility function for Nelson-Aalen estimate from Model III smoothing
     """
     if path:
         df = pd.read_csv(path)
     
-    t_max = df['time'].max()
+    t_max = df["time"].max()
     regular_grid = np.arange(0, np.floor(t_max) + 1, 1)
     
-    result = pd.DataFrame({'time': regular_grid})
+    result = pd.DataFrame({"time": regular_grid})
 
-    df_indexed = df.set_index('time')
-    result['Nelson-Aalen'] = df_indexed['Nelson-Aalen'].reindex(regular_grid, method='ffill').fillna(0).values
+    df_indexed = df.set_index("time")
+    result["Nelson-Aalen"] = df_indexed["Nelson-Aalen"].reindex(regular_grid, method="ffill").fillna(0).values
     
     return result
 
-def smooth_lambdas(path: str | None, df: pd.Series | pd.DataFrame, eps=1e-4, k=5):
+def smooth_lambdas(path: str | None = None, df: pd.Series | pd.DataFrame = None, eps=1e-4, k=5):
 
     if path:
         regular = ffill_data_na(path)

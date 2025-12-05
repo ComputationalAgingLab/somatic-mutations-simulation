@@ -1,10 +1,18 @@
-name: somamut
+name: somatic-sim
 channels:
   - conda-forge
   - defaults
 dependencies:
-  - python==3.12.7
-  - pip=25.2
+  - python>=3.11,<3.14
+  - numpy=2.3.3
+  - pandas=2.3.2
+  - scipy=1.16.2
+  - matplotlib>=3.7.0
+  - scikit-learn=1.7.2
+  - seaborn=0.13.2
+  - statsmodels=0.14.5
+  - tqdm=4.67.1
+  - openpyxl=3.1.5
+  - pip
   - pip:
-          - -e .[notebooks]
-prefix: /home/vivis/miniconda3/envs/somamut
+    - -e .

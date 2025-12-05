@@ -3,7 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import os
 
-from modeling import ffill_data, smooth_lambdas, save_na_estimates
+from .modeling import ffill_data, smooth_lambdas, save_na_estimates
 
 def kaplan_meier(event_times, censored_mask):
     """
@@ -70,7 +70,7 @@ def find_time_from_km(target_s, km_t, km_s):
 def save_km_to_csv(filename, times, survs, lower, upper, median, na):
     df = pd.DataFrame({
         "time": times,
-        "survival": survs,
+        "S_organ(t)": survs,
         "lower_CI": lower,
         "upper_CI": upper,
         "Nelson-Aalen": na
@@ -80,7 +80,7 @@ def save_km_to_csv(filename, times, survs, lower, upper, median, na):
 
     na_file = filename.replace(".csv", "_na_hazard.csv")
 
-    na_data = df["Nelson-Aalen"]
+    na_data = df[["time", "Nelson-Aalen"]]
 
     smooth_na = smooth_lambdas(df=na_data)
 
