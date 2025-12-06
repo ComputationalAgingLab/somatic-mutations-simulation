@@ -20,7 +20,7 @@ conda env create -f environment.yml
 
 # 3. Activate
 ```
-conda activate somamut
+conda activate somatic-sim
 ```
 
 # 4. Install the package
