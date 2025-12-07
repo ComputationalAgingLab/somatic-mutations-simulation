@@ -82,4 +82,18 @@ Vlad Fedotov – Vlad.Fedotov@skoltech.ru
 Or open an issue on the GitHub repository
 
 ## Citation
-CITATION HERE
+If you found this library useful in your research, please cite us with the following plain citation or bibtex.
+
+*Efimov, E., Fedotov, V., Malaev, L., Khrameeva, E. E., & Kriukov, D. (2025). Somatic mutations impose an entropic upper bound on human lifespan. bioRxiv, 2025-11.*
+
+```
+@article {Efimov2025.11.23.689982,
+	author = {Efimov, Evgeniy and Fedotov, Vlad and Malaev, Leonid and Khrameeva, Ekaterina E. and Kriukov, Dmitrii},
+	title = {Somatic mutations impose an entropic upper bound on human lifespan},
+	elocation-id = {2025.11.23.689982},
+	year = {2025},
+	doi = {10.1101/2025.11.23.689982},
+	publisher = {Cold Spring Harbor Laboratory},
+	journal = {bioRxiv}
+}
+```
