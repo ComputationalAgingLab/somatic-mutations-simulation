@@ -11,6 +11,7 @@ authors = [
 ]
 readme = "README.md"
 requires-python = ">=3.11, <3.14"
+license = {text = "MIT"}
 
 dependencies = [
     "numpy==2.3.3",

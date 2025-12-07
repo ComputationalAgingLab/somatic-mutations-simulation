@@ -133,45 +133,100 @@ def frechet_hoeffding(data_brain,
 
     return df_times
 
+#def ffill_data_na(path: str | None = None, df: pd.Series | pd.DataFrame = None):
+#    """
+#    Utility function for Nelson-Aalen estimate from Model III smoothing
+#    """
+#    if path:
+#        df = pd.read_csv(path)
+#    
+#    t_max = df["time"].max()
+#    regular_grid = np.arange(0, np.floor(t_max) + 1, 1)
+#    
+#    result = pd.DataFrame({"time": regular_grid})
+#
+#    df_indexed = df.set_index("time")
+#    result["Nelson-Aalen"] = df_indexed["Nelson-Aalen"].reindex(regular_grid, method="ffill").fillna(0).values
+#    
+#    return result
 def ffill_data_na(path: str | None = None, df: pd.Series | pd.DataFrame = None):
-    """
-    Utility function for Nelson-Aalen estimate from Model III smoothing
-    """
     if path:
         df = pd.read_csv(path)
+
+    if len(df) == 0:
+        t_max = 100_000
+    elif len(df) == 1 and df["time"].iloc[0] == 0:
+        t_max = 100_000
+    else:
+        t_max = df["time"].max()
     
-    t_max = df["time"].max()
     regular_grid = np.arange(0, np.floor(t_max) + 1, 1)
-    
     result = pd.DataFrame({"time": regular_grid})
 
-    df_indexed = df.set_index("time")
-    result["Nelson-Aalen"] = df_indexed["Nelson-Aalen"].reindex(regular_grid, method="ffill").fillna(0).values
-    
+    if len(df) > 0:
+        df_indexed = df.set_index("time")
+        na_values = df_indexed["Nelson-Aalen"].reindex(regular_grid, method="ffill").fillna(0).values
+    else:
+        na_values = np.zeros_like(regular_grid)
+
+    result["Nelson-Aalen"] = na_values
     return result
 
+#def smooth_lambdas(path: str | None = None, df: pd.Series | pd.DataFrame = None, eps=1e-4, k=5):
+#
+#    if path:
+#        regular = ffill_data_na(path)
+#    else:
+#        regular = ffill_data_na(df=df)
+#
+#    regular["lambda"] = np.gradient(regular["Nelson-Aalen"], regular["time"])
+#    regular = regular[(regular["lambda"]>=eps)]
+#
+#    time_fill = np.arange(0, regular["time"].iloc[0],1)
+#    regular_add = pd.DataFrame({"time": time_fill, 
+#                                 "Nelson-Aalen": np.zeros_like(time_fill),
+#                                 "lambda": np.zeros_like(time_fill),
+#                                 "smooth_lambda": np.zeros_like(time_fill)})
+#    
+#    spline1 = UnivariateSpline(regular["time"], regular["lambda"], k=k)
+#
+#    regular["smooth_lambda"] = spline1(regular["time"])
+#
+#    regular_full = pd.concat([regular_add, regular], axis=0)
+#
+#    return regular_full[["time", "smooth_lambda"]]
 def smooth_lambdas(path: str | None = None, df: pd.Series | pd.DataFrame = None, eps=1e-4, k=5):
-
     if path:
         regular = ffill_data_na(path)
     else:
         regular = ffill_data_na(df=df)
 
     regular["lambda"] = np.gradient(regular["Nelson-Aalen"], regular["time"])
-    regular = regular[(regular["lambda"]>=eps)]
-
-    time_fill = np.arange(0, regular["time"].iloc[0],1)
-    regular_add = pd.DataFrame({"time": time_fill, 
-                                 "Nelson-Aalen": np.zeros_like(time_fill),
-                                 "lambda": np.zeros_like(time_fill),
-                                 "smooth_lambda": np.zeros_like(time_fill)})
     
-    spline1 = UnivariateSpline(regular["time"], regular["lambda"], k=k)
+    regular_filtered = regular[regular["lambda"] >= eps].copy()
+    
+    if regular_filtered.empty:
+        regular_full = regular.copy()
+        regular_full["smooth_lambda"] = 0.0
+        return regular_full[["time", "smooth_lambda"]]
 
-    regular["smooth_lambda"] = spline1(regular["time"])
+    time_fill = np.arange(0, regular_filtered["time"].iloc[0], 1)
+    regular_add = pd.DataFrame({
+        "time": time_fill,
+        "Nelson-Aalen": np.zeros_like(time_fill),
+        "lambda": np.zeros_like(time_fill),
+        "smooth_lambda": np.zeros_like(time_fill)
+    })
 
-    regular_full = pd.concat([regular_add, regular], axis=0)
+    try:
+        k_use = min(k, len(regular_filtered) - 1)
+        k_use = max(1, k_use)
+        spline1 = UnivariateSpline(regular_filtered["time"], regular_filtered["lambda"], k=k_use, s=0)
+        regular_filtered["smooth_lambda"] = spline1(regular_filtered["time"])
+    except Exception:
+        regular_filtered["smooth_lambda"] = regular_filtered["lambda"]
 
+    regular_full = pd.concat([regular_add, regular_filtered], axis=0)
     return regular_full[["time", "smooth_lambda"]]
 
 def save_na_estimates(regular, path: str):

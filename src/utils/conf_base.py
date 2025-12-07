@@ -152,7 +152,6 @@ class Config:
             param_specs["mu_s"] = (mu_s_mean, mu_s_std)
             param_specs["Q"] = (conf_s["K"]["mean"], conf_s["K"]["se"])
 
-        #return param_fixed, param_specs, initial_cond, x_crit
         return {
             "organ": self.organ,
             "fixed": param_fixed,
