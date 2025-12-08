@@ -1,11 +1,12 @@
 import numpy as np
-from typing import Dict, List, Tuple, Any
+from typing import Dict, Tuple
 from scipy.integrate import solve_ivp
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
-### Params conversion ###
-
-def mean_se_to_lognorm_params(mean, se):
+def mean_se_to_lognorm_params(mean: float, se: float) -> Tuple[float, float]:
+    """
+    Function for convertion of (mean, SE) to lognormal distribution params
+    """
     if mean <= 0:
         raise ValueError("Mean must be > 0 for lognormal parameterization")
     if se <= 0:
@@ -15,20 +16,27 @@ def mean_se_to_lognorm_params(mean, se):
     mu_ln = np.log(mean) - 0.5 * sigma_ln ** 2
     return mu_ln, sigma_ln
 
-def sample_lognormal_from_mean_se(mean, se, rng):
+def sample_lognormal_from_mean_se(mean: float, se: float, rng):
+    """
+    Function for sampling from lognormal distribution
+    """
     mu_ln, sigma_ln = mean_se_to_lognorm_params(mean, se)
     return rng.lognormal(mean=mu_ln, sigma=sigma_ln)
 
-### Events for the simulation ###
-
-def make_event_xcrit(x_crit):
+def make_event_xcrit(x_crit: float) -> callable:
+    """
+    Track the event of x_crit crossing
+    """
     def event(t, y):
         return y[0] - x_crit
     event.terminal = True
     event.direction = -1
     return event
 
-def make_event_zero():
+def make_event_zero() -> callable:
+    """
+    Track the event of near-zero population for extreme samples
+    """
     def event(t, y):
         eps = 1e-6
         return y[0] - eps
@@ -36,11 +44,35 @@ def make_event_zero():
     event.direction = -1
     return event
 
-### Monte-Carlo single run ###
+def single_run_worker(i: int, 
+                      seed: int, 
+                      initial_cond: dict, 
+                      param_fixed: dict, 
+                      param_specs: dict, 
+                      t_max: int,
+                      save_trace_flag: int,
+                      x_crit: float,
+                      rhs_factory: callable, 
+                      organ_s: str):
+    """
+    Function for Monte-Carlo simulation of model III survival
 
-def single_run_worker(i, seed, initial_cond, param_fixed, param_specs, t_max,
-                      save_trace_flag, x_crit,
-                      rhs_factory, organ_s):
+    Args:
+    * i: run number
+    * seed: random seed
+    * initial_cond: initial conditions for the simulation (sampled)
+    * param_fixed: deterministic parameters
+    * param_specs: random sampled parameters
+    * t_max: maximum simulation time
+    * save_trace_flag: number of traces to save
+    * x_crit: the critical threshold for simulation
+    * rhs_factory: ODE model
+    * organ_s: 'LPC' if Model IIIB is simulated
+
+    Output:
+    * Tuple of run number and results
+    """
+
     rng = np.random.default_rng(seed)
 
     sampled = {}
@@ -97,13 +129,41 @@ def single_run_worker(i, seed, initial_cond, param_fixed, param_specs, t_max,
 
 ### Monte-Carlo wrapper ###
 
-def monte_carlo_parallel(n_runs, initial_cond, param_fixed, param_specs, crit,
-                         t_max, rhs_factory, organ_s, n_workers, save_traces, seed):
+def monte_carlo_parallel(n_runs: int, 
+                         initial_cond: dict, 
+                         param_fixed: dict, 
+                         param_specs: dict, 
+                         x_crit: float,
+                         t_max: int, 
+                         rhs_factory: callable, 
+                         organ_s: str, 
+                         n_workers: int, 
+                         save_traces: int, 
+                         seed: int) -> Tuple[np.array, Dict]:
+    """
+    Function for Monte-Carlo simulation of model III survival
+
+    Args:
+    * n_runs: number of MC runs
+    * initial_cond: initial conditions for the simulation (sampled)
+    * param_fixed: deterministic parameters
+    * param_specs: random sampled parameters
+    * x_crit: the critical threshold for simulation
+    * t_max: maximum simulation time
+    * rhs_factory: ODE model
+    * organ_s: 'LPC' if Model IIIB is simulated
+    * n_workers: number of workers for parallel
+    * save_traces: number of traces to save
+    * seed: random seed
+
+    Output:
+    * Tuple of death times and traces
+    """
     base_seed = int(seed) if seed is not None else np.random.randint(0, 2**31-1)
     args = []
     for i in range(n_runs):
         args.append((i, base_seed + i, initial_cond, param_fixed, param_specs,
-                     t_max, (i < save_traces), crit, rhs_factory, organ_s))
+                     t_max, (i < save_traces), x_crit, rhs_factory, organ_s))
 
     death_times = np.full(n_runs, np.nan)
     traces = {}

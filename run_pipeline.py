@@ -20,8 +20,9 @@ def main():
     parser.add_argument("--organ", nargs='+', required=True,
                         choices=["brain", "heart", "liver", "lungs"],
                         help="Organs to simulate")
-    parser.add_argument("--organ_s", choices=["LPC"], default=None,
-                        help="Stem type for liver (applies to all liver runs)")
+    parser.add_argument("--organ_s", action="store_const", const="LPC",
+                    default=None,
+                    help="Stem type for liver")
 
 
     parser.add_argument("--n_mc", type=int, default=10000,

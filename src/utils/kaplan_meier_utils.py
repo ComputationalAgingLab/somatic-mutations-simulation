@@ -126,9 +126,6 @@ def save_km_plots(outdir, label, km_t, km_s, km_l, km_u):
     plt.close()
 
 def save_trajectory_plots(outdir, label, ts, pct_X, pct_P):
-    """
-    pct_X and pct_P are dicts keyed by percentile values (e.g. 2.5, 50, 97.5)
-    """
     def _plot_with_band(ts, median, low95, high95, ylabel, title, fname_lin, fname_log):
         plt.figure(figsize=(8,4))
         plt.plot(ts, median, label=f"{label} median")

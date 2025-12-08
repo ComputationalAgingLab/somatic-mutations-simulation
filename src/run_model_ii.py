@@ -4,16 +4,33 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from src.utils.conf_base import Config
 
-def run_model_ii(
-    organ: str,
-    n_mc: int = 20_000,
-    n_traj: int = 5_000,
-    t_max: int = 100_000,
-    n_common_points: int = 10_000,
-    seed: int = 123,
-    outdir: str = "results/model_ii",
-    N: float | int = 8e9
-) -> dict:
+from typing import Dict
+
+def run_model_ii(organ: str,
+                 n_mc: int = 20_000,
+                 n_traj: int = 5_000,
+                 t_max: int = 100_000,
+                 n_common_points: int = 10_000,
+                 seed: int = 123,
+                 outdir: str = "results/model_ii",
+                 N: float | int = 8e9
+                 ) -> Dict:
+    """
+    Model II simulation script
+    
+     Args:
+    * organ: organ for simulation (brain, heart)
+    * n_mc: number of MC runs
+    * n_traj: number of cell population trajectories to simulate
+    * t_max: maximum simulation time
+    * n_common_points: resolution of time grid
+    * seed: random seed
+    * outdir: where to save
+    * N: 1 / threshold
+
+    Output:
+    * dictionary of times, S(t) values and X(t) traces
+    """
     
     organ = organ.lower()
     if organ not in ["brain", "heart"]:

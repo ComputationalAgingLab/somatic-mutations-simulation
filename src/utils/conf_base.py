@@ -1,4 +1,4 @@
-from typing import Union, Dict, List, Tuple, Any
+from typing import Dict, Tuple
 import numpy as np
 
 class Config:
@@ -9,18 +9,18 @@ class Config:
                  N : float | int = 8e9,
                  time_max: float | int = 20_000,
                  time_points: int = 20_000,
-                 mc_samples: int = 10_000):
+                 mc_samples: int = 10_000) -> Dict:
         """
         Basic config class for model initialization
 
-        ** Args **
-        - organ : organ to simulate.
-        - organ_s : for model IIIB, choosing the LPC if needed.
-        - lambda_bg: background hazard rate
-        - N: for the threshold (1/N)
-        - time_max: max time for simulation
-        - time_points: num of time points to sample
-        - mc_samples: Monte-Carlo runs
+        Args:
+        * organ: organ to simulate.
+        * organ_s: for model IIIB, choosing the LPC if needed.
+        * lambda_bg: background hazard rate
+        * N: for the threshold (1/N)
+        * time_max: max time for simulation
+        * time_points: num of time points to sample
+        * mc_samples: Monte-Carlo runs
         """
         self.organ = organ.lower()
         self.organ_s = organ_s
@@ -122,7 +122,7 @@ class Config:
 
         return r_mean, r_se
     
-    def _get_params_model_three(self) -> Tuple[Dict, Dict, Dict, float]:
+    def _get_params_model_three(self) -> Dict:
         conf = self.values[self.organ]
 
         mu_mean, mu_std = self._get_se_mean_mu(organ=self.organ)
@@ -198,7 +198,7 @@ class Config:
             "mc_samples": self.mc_samples,
         }
     
-    def get_params(self) -> Tuple[Dict, Dict, Dict, float] | Dict:
+    def get_params(self) -> Dict:
         """
         Method for getting parameters for the simulation
 

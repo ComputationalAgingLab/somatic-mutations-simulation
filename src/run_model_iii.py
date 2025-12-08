@@ -9,19 +9,39 @@ from src.utils.kaplan_meier_utils import (
     kaplan_meier, save_km_plots, save_km_to_csv, save_trajectory_plots
 )
 
-def run_model_iii(
-    organ_x: str,
-    organ_s: str | None = None,
-    n_mc: int = 2000,
-    n_traj: int = 400,
-    t_max: int = 100_000,
-    n_workers: int = 4,
-    save_traces: int = 100,
-    seed: int = 123,
-    outdir: str = "results/model_iii",
-    n_common_points: int = 10_000,
-    N: float | int = 8e9
-) -> dict:
+from typing import Dict
+
+def run_model_iii(organ_x: str,
+                  organ_s: str | None = None,
+                  n_mc: int = 2000,
+                  n_traj: int = 400,
+                  t_max: int = 100_000,
+                  n_workers: int = 4,
+                  save_traces: int = 100,
+                  seed: int = 123,
+                  outdir: str = "results/model_iii",
+                  n_common_points: int = 10_000,
+                  N: float | int = 8e9
+                  ) -> Dict:
+    """
+    Model III simulation script
+    
+     Args:
+    * organ_x: organ for simulation (liver, lungs)
+    * organ_s: 'LPC' for Model IIIB
+    * n_mc: number of MC runs
+    * n_traj: number of cell population trajectories to simulate
+    * t_max: maximum simulation time
+    * n_workers: number of workers for parallel
+    * save_traces: how many traces to save
+    * seed: random seed
+    * outdir: where to save
+    * n_common_points: resolution of time grid
+    * N: 1 / threshold
+
+    Output:
+    * dictionary of KM estimate and death times
+    """
     
     organ_x = organ_x.lower()
     if organ_x not in ["liver", "lungs"]:
