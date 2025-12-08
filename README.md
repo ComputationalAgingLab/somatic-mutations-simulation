@@ -28,13 +28,6 @@ conda activate somatic-sim
 pip install -e .
 ```
 
-### 5. OR if you want to use pyproject.toml
-```
-git clone https://github.com/ComputationalAgingLab/somatic-mutations-simulation.git
-cd somatic-mutations-simulation
-pip install -e .
-```
-
 ## Usage
 
 ### Run brain (Model II)
