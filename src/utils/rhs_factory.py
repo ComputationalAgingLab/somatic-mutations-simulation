@@ -102,7 +102,7 @@ def rhs_base(organ: str, organ_s: str = None) -> callable:
     """
     Function to return ODE type for the simulation
 
-    Args:
+     Args:
     * organ: base organ for the simulation
     * organ_s: if LPC is included for the liver
     """
