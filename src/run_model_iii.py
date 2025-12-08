@@ -73,6 +73,7 @@ def run_model_iii(
                     for p in (2.5, 10, 25, 50, 75, 90, 97.5)}
     pd.DataFrame([perc_summary]).to_csv(os.path.join(full_outdir, "death_time_percentiles.csv"), index=False)
 
+    print(f"Running trajectory simulation for {label}...")
     _, traces = monte_carlo_parallel(
         n_runs=n_traj,
         initial_cond=initial_cond,

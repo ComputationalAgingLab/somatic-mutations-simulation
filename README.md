@@ -52,9 +52,9 @@ python run_pipeline.py --organ liver --organ_s LPC
 python run_pipeline.py --organ brain --compute_hazard
 ```
 
-### If installed through pyproject way
+### You can also run multiple organs in one command
 ```
-run-simulation --organ brain
+python run_pipeline.py --organ heart liver --n_mc 1000 --n_traj 1000
 ```
 
 ### Frech\'et - Hoeffding bounds calculation

@@ -1,2 +1,0 @@
-[console_scripts]
-run-simulation = run_pipeline:main

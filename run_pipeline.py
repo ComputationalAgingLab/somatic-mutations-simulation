@@ -2,7 +2,6 @@
 import argparse
 import sys
 import os
-from typing import List
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
