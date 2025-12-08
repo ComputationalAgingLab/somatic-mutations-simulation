@@ -44,7 +44,7 @@ python run_pipeline.py --organ brain
 
 ### Run liver with LPC (Model IIIB)
 ```
-python run_pipeline.py --organ liver --organ_s LPC
+python run_pipeline.py --organ liver --organ_s
 ```
 
 ### Also compute hazard rates
