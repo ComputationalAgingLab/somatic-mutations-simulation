@@ -2,18 +2,53 @@ import pandas as pd
 import numpy as np
 from scipy.interpolate import UnivariateSpline
 
+def first_time_below(s: np.ndarray, t: np.ndarray, thresh: float) -> float | None:
+    """
+    Return the first time t where s(t) drops to or below thresh.
+
+    Args:
+        s: survival (or any monotone-decreasing) array
+        t: corresponding time array, same length as s
+        thresh: threshold value
+
+    Returns:
+        First time at or below thresh, or None if never reached
+    """
+    mask = s <= thresh
+    if np.any(mask):
+        return float(t[np.where(mask)[0][0]])
+    return None
+
+
+def compute_threshold_times(s: np.ndarray, t: np.ndarray,
+                            thresholds: list) -> pd.DataFrame:
+    """
+    Compute the first crossing time of each threshold for a survival curve.
+
+    Args:
+        s: survival array
+        t: time array
+        thresholds: list of survival threshold values (e.g. [0.5, 0.1, 0.01])
+
+    Returns:
+        Single-row DataFrame with columns t_S{thresh} for each threshold
+    """
+    row = {f"t_S{thr}": first_time_below(s, t, thr) for thr in thresholds}
+    return pd.DataFrame([row])
+
+
 def ffill_data(save_path: str, df: pd.DataFrame | None = None, 
                path: str | None = None) -> None:
     """
     Function to postprocess the Kaplan-Meier output from model III
 
-    Args: 
-    * path to .csv file with KM estimate, 
-    * save_path: where to save the resulting csv
-    * df: dataframe instance (alternative to path)
+    Args:
+        save_path: where to save the resulting csv
+        df: dataframe instance (alternative to path)
+        path: path to .csv file with KM estimate
 
-    Output: 
-    * None, writes new file to save_path
+    Returns:
+        None, writes new file to save_path
     """
     # Baseline hazard
     l = 0.0016133681587490935
@@ -48,14 +83,16 @@ def frechet_hoeffding(data_brain,
                       data_lungs,
                       save_path: str | None = None) -> pd.DataFrame:
     """
-    Function for Frech\'et-Hoeffding bounds estimation.
+    Function for Fréchet-Hoeffding bounds estimation.
 
     Args:
-    * Three dataframes with survival probability (The fourth one - Liver+LPC is 1.0 everywhere)
-    * save_path: where to save the resulting csv
+        data_brain: survival DataFrame for brain
+        data_heart: survival DataFrame for heart
+        data_lungs: survival DataFrame for lungs
+        save_path: where to save the resulting csv (liver+LPC assumed S=1 everywhere)
 
-    Output:
-    * dataframe with lower, upper bounds and independence case
+    Returns:
+        DataFrame with lower, upper bounds and independence case
     """
     
     # S(t) extraction
@@ -70,12 +107,13 @@ def frechet_hoeffding(data_brain,
     t_lungs_time = data_lungs["time"]
 
     st_baseline_interp   = np.interp(t_common, t_baseline_time, st_baseline)
-    st_lungs_filtered  = np.interp(t_common, t_lungs_time, st_lungs)
+    st_heart_interp      = np.interp(t_common, t_baseline_time, st_organ_heart)
+    st_lungs_filtered    = np.interp(t_common, t_lungs_time, st_lungs)
 
-    S = np.vstack([st_organ_brain, st_organ_heart, st_lungs_filtered, np.ones(st_lungs_filtered.shape)])
+    S = np.vstack([st_organ_brain, st_heart_interp, st_lungs_filtered, np.ones(st_lungs_filtered.shape)])
 
     # Independence = prod(S_i), liver is 1.0 for all time points
-    S_indep = np.prod([st_baseline_interp, st_organ_brain, st_organ_heart, st_lungs_filtered], axis=0)
+    S_indep = np.prod([st_baseline_interp, st_organ_brain, st_heart_interp, st_lungs_filtered], axis=0)
 
     # Lower bound = max(0, sum_{i=1}^{n}(S_i) - (n - 1))
     L = st_baseline_interp * np.maximum(0, np.sum(S, axis=0) - (S.shape[0]-1))
@@ -86,27 +124,20 @@ def frechet_hoeffding(data_brain,
     threshold = 1/8e9
     t = data_brain["time"].values
 
-    def first_time_at_or_below(series, thresh):
-        mask = series <= thresh
-        if np.any(mask):
-            return t[np.where(mask)[0][0]]
-        else:
-            return None
-
     # Threshold calculation for the human population
-    t_max = first_time_at_or_below(U, threshold)    
-    t_min  = first_time_at_or_below(L, threshold)     
-    t_indep = first_time_at_or_below(S_indep, threshold)
+    t_max   = first_time_below(U,       t, threshold)
+    t_min   = first_time_below(L,       t, threshold)
+    t_indep = first_time_below(S_indep, t, threshold)
 
     # Threshold = 0.01 and 0.5 for all cases
-    t_001_indep = first_time_at_or_below(S_indep, 0.01)   
-    t_05_indep = first_time_at_or_below(S_indep, 0.5)   
+    t_001_indep = first_time_below(S_indep, t, 0.01)
+    t_05_indep  = first_time_below(S_indep, t, 0.5)
 
-    t_001_U = first_time_at_or_below(U, 0.01)   
-    t_05_U = first_time_at_or_below(U, 0.5)  
+    t_001_U = first_time_below(U, t, 0.01)
+    t_05_U  = first_time_below(U, t, 0.5)
 
-    t_001_L = first_time_at_or_below(L, 0.01)   
-    t_05_L = first_time_at_or_below(L, 0.5)  
+    t_001_L = first_time_below(L, t, 0.01)
+    t_05_L  = first_time_below(L, t, 0.5)
 
     print(f"Lower bound: {np.round(t_min)}")
     print(f"Upper bound: {np.round(t_max)}")
@@ -138,13 +169,12 @@ def ffill_data_na(path: str | None = None,
     """
     Function to postprocess the Nelson-Aalen (NA) cumulative hazard estimate from model III
 
-    Args: 
-    * path to .csv file with NA estimate, 
-    * save_path: where to save the resulting csv
-    * df: dataframe instance (alternative to path)
+    Args:
+        path: path to .csv file with NA estimate
+        df: dataframe instance (alternative to path)
 
-    Output: 
-    * dataframe with forward-filled data
+    Returns:
+        DataFrame with forward-filled data on a regular time grid
     """
     if path:
         df = pd.read_csv(path)
@@ -177,14 +207,14 @@ def smooth_lambdas(path: str | None = None,
     """
     Function for smoothing hazard rates for model III
 
-    Args: 
-    * path to .csv file with NA estimate, 
-    * df: dataframe instance (alternative to path)
-    * eps: lower bound to filter the h(t) values
-    * k: order of spline
+    Args:
+        path: path to .csv file with NA estimate
+        df: dataframe instance (alternative to path)
+        eps: lower bound to filter the h(t) values
+        k: order of spline
 
-    Output: 
-    * dataframe with smooth h(t) values
+    Returns:
+        DataFrame with smooth h(t) values
     """
 
     if path:

@@ -58,19 +58,19 @@ def single_run_worker(i: int,
     Function for Monte-Carlo simulation of model III survival
 
     Args:
-    * i: run number
-    * seed: random seed
-    * initial_cond: initial conditions for the simulation (sampled)
-    * param_fixed: deterministic parameters
-    * param_specs: random sampled parameters
-    * t_max: maximum simulation time
-    * save_trace_flag: number of traces to save
-    * x_crit: the critical threshold for simulation
-    * rhs_factory: ODE model
-    * organ_s: 'LPC' if Model IIIB is simulated
+        i: run number
+        seed: random seed
+        initial_cond: initial conditions for the simulation (sampled)
+        param_fixed: deterministic parameters
+        param_specs: random sampled parameters
+        t_max: maximum simulation time
+        save_trace_flag: number of traces to save
+        x_crit: the critical threshold for simulation
+        rhs_factory: ODE model
+        organ_s: 'LPC' if Model IIIB is simulated
 
-    Output:
-    * Tuple of run number and results
+    Returns:
+        Tuple of run number and results
     """
 
     rng = np.random.default_rng(seed)
@@ -121,8 +121,7 @@ def single_run_worker(i: int,
     if save_trace_flag and sol.sol is not None:
         t_eval = np.linspace(0, t_max, 200)
         y_eval = sol.sol(t_eval)
-        y_eval[0, :] = np.maximum(y_eval[0, :], 0.0)
-        y_eval[1, :] = np.maximum(y_eval[1, :], 0.0)
+        y_eval[:, :] = np.maximum(y_eval, 0.0)
         trace = (t_eval, y_eval)
 
     return (i, death_time, trace)
@@ -144,20 +143,20 @@ def monte_carlo_parallel(n_runs: int,
     Function for Monte-Carlo simulation of model III survival
 
     Args:
-    * n_runs: number of MC runs
-    * initial_cond: initial conditions for the simulation (sampled)
-    * param_fixed: deterministic parameters
-    * param_specs: random sampled parameters
-    * x_crit: the critical threshold for simulation
-    * t_max: maximum simulation time
-    * rhs_factory: ODE model
-    * organ_s: 'LPC' if Model IIIB is simulated
-    * n_workers: number of workers for parallel
-    * save_traces: number of traces to save
-    * seed: random seed
+        n_runs: number of MC runs
+        initial_cond: initial conditions for the simulation (sampled)
+        param_fixed: deterministic parameters
+        param_specs: random sampled parameters
+        x_crit: the critical threshold for simulation
+        t_max: maximum simulation time
+        rhs_factory: ODE model
+        organ_s: 'LPC' if Model IIIB is simulated
+        n_workers: number of workers for parallel
+        save_traces: number of traces to save
+        seed: random seed
 
-    Output:
-    * Tuple of death times and traces
+    Returns:
+        Tuple of death times and traces
     """
     base_seed = int(seed) if seed is not None else np.random.randint(0, 2**31-1)
     args = []

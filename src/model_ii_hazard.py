@@ -31,13 +31,13 @@ def get_mc_mus(mu_mean: float, mu_std: float, mc_samples: int, seed: int):
 def make_hazard_functions(conf: dict, seed: int) -> Tuple[callable, callable]:
     """
     Generator for hazard function
-    
-     Args:
-    * conf: config instance
-    * seed: random seed
 
-    Output:
-    * Tuple of organ hazard and combined hazard
+    Args:
+        conf: config instance
+        seed: random seed
+
+    Returns:
+        Tuple of organ hazard and combined hazard
     """
     mu_ln_K, sigma_ln_K = conf["mu_lognormal"], conf["sigma_lognormal"]
     x_c = conf["x_c"]
@@ -84,15 +84,15 @@ def compute_hazard(organ: str,
                     ) -> None:
     """
     Function for hazard computation and saving for Model II
-    
-     Args:
-    * organ: brain or heart
-    * n_mc: number of MC runs
-    * t_max: maximum time of simulation
-    * time_points: the resolution of time grid
-    * sparse: to use sparse time grid or not (recommended True for heart)
-    * outdir: directory for saving
-    * seed: random seed
+
+    Args:
+        organ: brain or heart
+        n_mc: number of MC runs
+        t_max: maximum time of simulation
+        time_points: the resolution of time grid
+        sparse: to use sparse time grid or not (recommended True for heart)
+        outdir: directory for saving
+        seed: random seed
     """
 
     if organ not in ["brain", "heart"]:
@@ -129,13 +129,17 @@ def compute_hazard(organ: str,
     df.to_csv(csv_path, index=False)
     print(f"Results saved to: {csv_path}")
 
-    color = 'tab:red'
-    plt.ylabel('Hazard Rate (per year)', color=color)
-    plt.plot(t_vals, h_organ_vals, color=color, linestyle='--', label="Total Hazard")
-    plt.tick_params(axis='y', labelcolor=color)
+    fig, ax = plt.subplots(figsize=(8, 5))
+    ax.plot(t_vals, h_organ_vals, color="tab:red",  linestyle="--", label="Organ hazard")
+    ax.plot(t_vals, h_total_vals, color="tab:blue", linestyle="-",  label="Total hazard (organ + background)")
+    ax.set_xlabel("Time (years)")
+    ax.set_ylabel("Hazard rate (per year)")
+    ax.set_title(f"Hazard rates — {organ.capitalize()}")
+    ax.legend()
+    ax.grid(True, alpha=0.3)
+    fig.tight_layout()
 
-    plt.title(f"Survival and Hazard for {organ.capitalize()}")
     plot_path = os.path.join(outdir, f"{organ}_survival_hazard.png")
-    plt.savefig(plot_path, dpi=150)
+    fig.savefig(plot_path, dpi=150)
+    plt.close(fig)
     print(f"Plot saved to: {plot_path}")
-    plt.show()

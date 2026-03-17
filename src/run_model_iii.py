@@ -8,6 +8,7 @@ from src.utils.rhs_factory import rhs_base
 from src.utils.kaplan_meier_utils import (
     kaplan_meier, save_km_plots, save_km_to_csv, save_trajectory_plots
 )
+from src.utils.modeling import compute_threshold_times
 
 from typing import Dict
 
@@ -25,22 +26,22 @@ def run_model_iii(organ_x: str,
                   ) -> Dict:
     """
     Model III simulation script
-    
-     Args:
-    * organ_x: organ for simulation (liver, lungs)
-    * organ_s: 'LPC' for Model IIIB
-    * n_mc: number of MC runs
-    * n_traj: number of cell population trajectories to simulate
-    * t_max: maximum simulation time
-    * n_workers: number of workers for parallel
-    * save_traces: how many traces to save
-    * seed: random seed
-    * outdir: where to save
-    * n_common_points: resolution of time grid
-    * N: 1 / threshold
 
-    Output:
-    * dictionary of KM estimate and death times
+    Args:
+        organ_x: organ for simulation (liver, lungs)
+        organ_s: 'LPC' for Model IIIB
+        n_mc: number of MC runs
+        n_traj: number of cell population trajectories to simulate
+        t_max: maximum simulation time
+        n_workers: number of workers for parallel
+        save_traces: how many traces to save
+        seed: random seed
+        outdir: where to save
+        n_common_points: resolution of time grid
+        N: 1 / threshold
+
+    Returns:
+        dictionary of KM estimate and death times
     """
     
     organ_x = organ_x.lower()
@@ -72,7 +73,7 @@ def run_model_iii(organ_x: str,
         initial_cond=initial_cond,
         param_fixed=param_fixed,
         param_specs=param_specs,
-        crit=x_crit,
+        x_crit=x_crit,
         t_max=t_max,
         n_workers=n_workers,
         save_traces=0,
@@ -93,13 +94,18 @@ def run_model_iii(organ_x: str,
                     for p in (2.5, 10, 25, 50, 75, 90, 97.5)}
     pd.DataFrame([perc_summary]).to_csv(os.path.join(full_outdir, "death_time_percentiles.csv"), index=False)
 
+    thresholds = [0.5, 0.01, 0.001, 1e-4, 1e-5, 1e-6, 1e-7, 1 / N]
+    compute_threshold_times(km_s, km_t, thresholds).to_csv(
+        os.path.join(full_outdir, "threshold_crossing_times.csv"), index=False
+    )
+
     print(f"Running trajectory simulation for {label}...")
     _, traces = monte_carlo_parallel(
         n_runs=n_traj,
         initial_cond=initial_cond,
         param_fixed=param_fixed,
         param_specs=param_specs,
-        crit=x_crit,
+        x_crit=x_crit,
         t_max=t_max,
         n_workers=n_workers,
         save_traces=save_traces,

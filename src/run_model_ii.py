@@ -2,7 +2,9 @@ import os
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from scipy.stats import lognorm
 from src.utils.conf_base import Config
+from src.utils.modeling import compute_threshold_times
 
 from typing import Dict
 
@@ -17,19 +19,19 @@ def run_model_ii(organ: str,
                  ) -> Dict:
     """
     Model II simulation script
-    
-     Args:
-    * organ: organ for simulation (brain, heart)
-    * n_mc: number of MC runs
-    * n_traj: number of cell population trajectories to simulate
-    * t_max: maximum simulation time
-    * n_common_points: resolution of time grid
-    * seed: random seed
-    * outdir: where to save
-    * N: 1 / threshold
 
-    Output:
-    * dictionary of times, S(t) values and X(t) traces
+    Args:
+        organ: organ for simulation (brain, heart)
+        n_mc: number of MC runs
+        n_traj: number of cell population trajectories to simulate
+        t_max: maximum simulation time
+        n_common_points: resolution of time grid
+        seed: random seed
+        outdir: where to save
+        N: 1 / threshold
+
+    Returns:
+        dictionary of times, S(t) values and X(t) traces
     """
     
     organ = organ.lower()
@@ -65,20 +67,22 @@ def run_model_ii(organ: str,
     K_ln, K_sigma = to_lognorm(x0_mean, x0_std)
 
     mu_samples_full = rng.lognormal(mu_ln, mu_sigma, n_mc)
-    K_samples_full = rng.lognormal(K_ln, K_sigma, n_mc)
 
-    X_full = K_samples_full[:, None] * np.exp(-mu_samples_full[:, None] * t_vals[None, :])
-    S_organ = np.mean(X_full > x_crit, axis=0)
-    S_bg = np.exp(-lambda_bg * t_vals)
+    thresholds = x_crit * np.exp(np.outer(mu_samples_full, t_vals))
+
+    np.clip(thresholds, None, 1e300, out=thresholds)
+
+    S_organ_per_mu = 1.0 - lognorm.cdf(
+        thresholds, s=K_sigma, scale=np.exp(K_ln)
+    )
+    S_organ = np.mean(S_organ_per_mu, axis=0)
+    S_bg    = np.exp(-lambda_bg * t_vals)
     S_total = S_organ * S_bg
 
-    if n_traj < n_mc:
-        idx = rng.choice(n_mc, size=n_traj, replace=False)
-        K_traj = K_samples_full[idx]
-        mu_traj = mu_samples_full[idx]
-    else:
-        K_traj = K_samples_full
-        mu_traj = mu_samples_full
+    n_traj  = min(n_traj, n_mc)
+    traj_idx = rng.choice(n_mc, size=n_traj, replace=False)
+    mu_traj  = mu_samples_full[traj_idx]
+    K_traj   = rng.lognormal(K_ln, K_sigma, n_traj)
 
     X_traj = K_traj[:, None] * np.exp(-mu_traj[:, None] * t_vals[None, :])
 
@@ -89,12 +93,17 @@ def run_model_ii(organ: str,
         "S_combined(t)": S_total
     }).to_csv(os.path.join(full_outdir, "survival_mean.csv"), index=False)
 
-    S_total_samples = (X_traj > x_crit).astype(float) * S_bg
+    S_total_per_mu = S_organ_per_mu * S_bg
     perc_surv = [2.5, 25, 50, 75, 97.5]
     df_bands = pd.DataFrame({"time": t_vals})
     for p in perc_surv:
-        df_bands[f"S_total_p{p}"] = np.percentile(S_total_samples, p, axis=0)
+        df_bands[f"S_total_p{p}"] = np.percentile(S_total_per_mu, p, axis=0)
     df_bands.to_csv(os.path.join(full_outdir, "survival_percentiles.csv"), index=False)
+
+    thresholds = [0.5, 0.01, 0.001, 1e-4, 1e-5, 1e-6, 1e-7, 1 / N]
+    compute_threshold_times(S_total, t_vals, thresholds).to_csv(
+        os.path.join(full_outdir, "threshold_crossing_times.csv"), index=False
+    )
 
     plt.figure(figsize=(8, 5))
     plt.plot(t_vals, S_total, color="blue", label="Mean S(t)")

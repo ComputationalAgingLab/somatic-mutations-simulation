@@ -14,13 +14,13 @@ class Config:
         Basic config class for model initialization
 
         Args:
-        * organ: organ to simulate.
-        * organ_s: for model IIIB, choosing the LPC if needed.
-        * lambda_bg: background hazard rate
-        * N: for the threshold (1/N)
-        * time_max: max time for simulation
-        * time_points: num of time points to sample
-        * mc_samples: Monte-Carlo runs
+            organ: organ to simulate
+            organ_s: for model IIIB, choosing the LPC if needed
+            lambda_bg: background hazard rate
+            N: for the threshold (1/N)
+            time_max: max time for simulation
+            time_points: num of time points to sample
+            mc_samples: Monte-Carlo runs
         """
         self.organ = organ.lower()
         self.organ_s = organ_s
@@ -202,8 +202,8 @@ class Config:
         """
         Method for getting parameters for the simulation
 
-        ** Args **
-        - Every arg is given in the __init__
+        Args:
+            All parameters are set via __init__.
         """
         if self.model == "II":
             return self._get_params_model_two()

@@ -5,6 +5,9 @@ import numpy as np
 def rhs_three_a(params: dict) -> callable:
     """
     Model IIIA ODE description
+
+    Args:
+        params: dict with keys mu, r, H, K
     """
     mu = params.get("mu", 0.0)
     r = params.get("r", 0.0)
@@ -27,6 +30,9 @@ def rhs_three_a(params: dict) -> callable:
 def rhs_three_b(params: dict) -> callable:
     """
     Model IIIB ODE description
+
+    Args:
+        params: dict with keys mu, r, H, K, Q, r_s, mu_s
     """
     mu = params.get("mu", 0.0)
     r = params.get("r", 0.0)
@@ -63,6 +69,9 @@ def rhs_three_b(params: dict) -> callable:
 def rhs_three_c(params: dict) -> callable:
     """
     Model IIIC ODE description
+
+    Args:
+        params: dict with keys mu_b, r_b, H, K, fbbfxx
     """
     mu_b = params.get("mu_b", 0.0)
     r_b = params.get("r_b", 0.0)
@@ -102,9 +111,9 @@ def rhs_base(organ: str, organ_s: str = None) -> callable:
     """
     Function to return ODE type for the simulation
 
-     Args:
-    * organ: base organ for the simulation
-    * organ_s: if LPC is included for the liver
+    Args:
+        organ: base organ for the simulation
+        organ_s: if LPC is included for the liver
     """
     if (organ not in ["liver", "lungs"]):
         raise ValueError("Model three simulation only for liver and lungs.")
