@@ -46,13 +46,14 @@ def rhs_three_b(params: dict) -> callable:
         X, S, P = y
 
         if X < 1e-10:
-            return [0.0, 0.0]
-        uss = 3.45 - 6.04*S/Q + 0.51*X/K
-        uxx = 0.43 + 6.04*S/Q - 8.56*X/K
+            return [0.0, 0.0, 0.0]
+        uss = np.clip(3.45 - 6.04*S/Q + 0.51*X/K, -500, 500)
+        uxx = np.clip(0.43 + 6.04*S/Q - 8.56*X/K, -500, 500)
 
-        f_ss = np.exp(uss)/(np.exp(uss) + np.exp(uxx) + 1)
-        f_xx = np.exp(uxx)/(np.exp(uss) + np.exp(uxx) + 1)
-        f_xs = 1/(np.exp(uss) + np.exp(uxx) + 1)
+        denom_sxs = np.exp(uss) + np.exp(uxx) + 1
+        f_ss = np.exp(uss) / denom_sxs
+        f_xx = np.exp(uxx) / denom_sxs
+        f_xs = 1.0   / denom_sxs
 
         g_s = (1 - X / K)**2 + (1 - S / Q)**2 - (1 - X / K)**2 * (1 - S / Q)**2
 
@@ -71,10 +72,10 @@ def rhs_three_c(params: dict) -> callable:
     Model IIIC ODE description
 
     Args:
-        params: dict with keys mu_b, r_b, H, K, fbbfxx
+        params: dict with keys mu, r, H, K, fbbfxx
     """
-    mu_b = params.get("mu_b", 0.0)
-    r_b = params.get("r_b", 0.0)
+    mu_b = params.get("mu", 0.0)
+    r_b = params.get("r", 0.0)
     H = params.get("H", 1.0)
     K = params.get("K", 1.0)
     fbbfxx = params.get("fbbfxx", 1.0)
@@ -120,7 +121,7 @@ def rhs_base(organ: str, organ_s: str = None) -> callable:
     
     if organ_s:
         if organ != "liver":
-            return ValueError("LPC is modelled only when organ == liver.")
+            raise ValueError("LPC is modelled only when organ == liver.")
         return rhs_three_b
     else:
         if organ == "liver":

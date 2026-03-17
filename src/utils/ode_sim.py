@@ -119,7 +119,8 @@ def single_run_worker(i: int,
             print(f"Warning: Run {i} had negative X values despite protections")
     
     if save_trace_flag and sol.sol is not None:
-        t_eval = np.linspace(0, t_max, 200)
+        t_end  = death_time if not np.isnan(death_time) else t_max
+        t_eval = np.linspace(0, t_end, 200)
         y_eval = sol.sol(t_eval)
         y_eval[:, :] = np.maximum(y_eval, 0.0)
         trace = (t_eval, y_eval)

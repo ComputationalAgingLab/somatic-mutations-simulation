@@ -1,5 +1,6 @@
 from typing import Dict, Tuple
 import numpy as np
+from src.utils.ode_sim import mean_se_to_lognorm_params
 
 class Config:
     def __init__(self, 
@@ -9,7 +10,7 @@ class Config:
                  N : float | int = 8e9,
                  time_max: float | int = 20_000,
                  time_points: int = 20_000,
-                 mc_samples: int = 10_000) -> Dict:
+                 mc_samples: int = 10_000) -> None:
         """
         Basic config class for model initialization
 
@@ -130,7 +131,8 @@ class Config:
         r_mean, r_se = self._get_se_r(organ=self.organ)
 
         param_fixed = {
-            "H": conf['H']
+            "H": conf['H'],
+            **( {"fbbfxx": conf["fbbfxx"]} if "fbbfxx" in conf else {} )
         }
 
         param_specs = {
@@ -174,13 +176,7 @@ class Config:
         x0_std = conf["K"].get("se", 0.1 * x0_mean)
         x_c = conf["x_crit"] * x0_mean
 
-        cv = x0_std / x0_mean
-        if cv > 0:
-            sigma_lognormal = np.sqrt(np.log(1 + cv**2))
-            mu_lognormal = np.log(x0_mean) - 0.5 * sigma_lognormal**2
-        else:
-            sigma_lognormal = 1e-6
-            mu_lognormal = np.log(x0_mean)
+        mu_lognormal, sigma_lognormal = mean_se_to_lognorm_params(x0_mean, x0_std)
 
         return {
             "organ": self.organ,

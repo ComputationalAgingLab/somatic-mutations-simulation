@@ -5,17 +5,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 from src.utils.conf_base import Config
+from src.utils.ode_sim import mean_se_to_lognorm_params as _to_lognorm
 from typing import Dict
-
-
-def _to_lognorm(mean: float, std: float):
-    """Convert mean/std parameterisation to lognormal (mu_ln, sigma)."""
-    if mean <= 0 or std <= 0:
-        return np.log(abs(mean) + 1e-300), 1e-12
-    cv2 = (std / mean) ** 2
-    sigma = np.sqrt(np.log(1 + cv2))
-    mu_ln = np.log(mean) - 0.5 * sigma ** 2
-    return mu_ln, sigma
 
 
 def _mu_from_p(snv_mean: float, snv_se: float,

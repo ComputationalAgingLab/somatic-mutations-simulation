@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from scipy.stats import lognorm
 from src.utils.conf_base import Config
 from src.utils.modeling import compute_threshold_times
+from src.utils.ode_sim import mean_se_to_lognorm_params
 
 from typing import Dict
 
@@ -55,16 +56,8 @@ def run_model_ii(organ: str,
     t_vals = np.linspace(0, t_max, n_common_points)
     rng = np.random.default_rng(seed)
 
-    def to_lognorm(mean, std):
-        if mean <= 0 or std <= 0:
-            return np.log(mean), 1e-12
-        cv2 = (std / mean) ** 2
-        sigma = np.sqrt(np.log(1 + cv2))
-        mu_ln = np.log(mean) - 0.5 * sigma ** 2
-        return mu_ln, sigma
-
-    mu_ln, mu_sigma = to_lognorm(mu_mean, mu_std)
-    K_ln, K_sigma = to_lognorm(x0_mean, x0_std)
+    mu_ln, mu_sigma = mean_se_to_lognorm_params(mu_mean, mu_std)
+    K_ln, K_sigma   = mean_se_to_lognorm_params(x0_mean, x0_std)
 
     mu_samples_full = rng.lognormal(mu_ln, mu_sigma, n_mc)
 
