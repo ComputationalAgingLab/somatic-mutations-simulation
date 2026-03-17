@@ -47,7 +47,7 @@ python run_pipeline.py --organ brain --compute_hazard
 
 ### You can also run multiple organs in one command
 ```
-python run_pipeline.py --organ heart liver --n_mc 1000 --n_traj 1000
+python run_pipeline.py --organ heart liver --n_mc 1000 --n_traj 1000 --save_traces 1000
 ```
 
 ### Frech\'et - Hoeffding bounds calculation
