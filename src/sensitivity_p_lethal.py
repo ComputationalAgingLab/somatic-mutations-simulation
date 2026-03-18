@@ -132,31 +132,40 @@ def run_sensitivity_p_lethal(
     else:
         p_snv_lpc_arr = p_indels_lpc_arr = mu_s_mean_arr = mu_s_std_arr = None
 
-    t_vals   = np.linspace(0, t_max, n_common_points)
-    S_bg     = np.exp(-cfg.lambda_bg * t_vals)
-    S_matrix = np.zeros((n_samples, n_common_points))
+    t_vals         = np.linspace(0, t_max, n_common_points)
+    S_bg           = np.exp(-cfg.lambda_bg * t_vals)
+    S_matrix       = np.zeros((n_samples, n_common_points))
+    S_organ_matrix = np.zeros((n_samples, n_common_points))
 
     if cfg.model == "II":
         _sensitivity_model_ii(
-            params, mu_mean_arr, mu_std_arr, t_vals, S_bg, n_mc, seed, S_matrix
+            params, mu_mean_arr, mu_std_arr, t_vals, S_bg, n_mc, seed,
+            S_matrix, S_organ_matrix
         )
     else:
         _sensitivity_model_iii(
             organ, organ_s, params,
             mu_mean_arr, mu_std_arr, mu_s_mean_arr, mu_s_std_arr,
-            t_vals, S_bg, t_max, n_mc, n_workers, seed, S_matrix
+            t_vals, S_bg, t_max, n_mc, n_workers, seed,
+            S_matrix, S_organ_matrix
         )
 
     median_survival = _compute_median_survival(S_matrix, t_vals)
+    median_organ    = _compute_median_survival(S_organ_matrix, t_vals)
 
     survival_thresholds = [0.5, 0.01, 0.001, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7]
-    df_thresh = _compute_threshold_times(S_matrix, t_vals, survival_thresholds)
+    df_thresh       = _compute_threshold_times(S_matrix,       t_vals, survival_thresholds)
+    df_thresh_organ = _compute_threshold_times(S_organ_matrix, t_vals, survival_thresholds)
+    df_thresh_organ = df_thresh_organ.rename(
+        columns={c: c + "_organ" for c in df_thresh_organ.columns}
+    )
 
     sweep_dict = {
         "p_SNV":           p_snv_arr,
         "p_indels":        p_indels_arr,
         "mu_mean":         mu_mean_arr,
         "median_survival": median_survival,
+        "median_organ":    median_organ,
     }
     if organ_s:
         sweep_dict["p_SNV_LPC"]    = p_snv_lpc_arr
@@ -166,6 +175,7 @@ def run_sensitivity_p_lethal(
     df_sweep = (
         pd.DataFrame(sweep_dict)
         .join(df_thresh)
+        .join(df_thresh_organ)
         .sort_values("mu_mean")
         .reset_index(drop=True)
     )
@@ -177,10 +187,20 @@ def run_sensitivity_p_lethal(
         df_bands[f"S_p{p}"] = np.percentile(S_matrix, p, axis=0)
     df_bands.to_csv(os.path.join(full_outdir, "survival_sensitivity_bands.csv"), index=False)
 
+    df_organ_bands = pd.DataFrame({"time": t_vals})
+    for p in percentiles:
+        df_organ_bands[f"S_organ_p{p}"] = np.percentile(S_organ_matrix, p, axis=0)
+    df_organ_bands.to_csv(os.path.join(full_outdir, "organ_survival_sensitivity_bands.csv"), index=False)
+
     df_full = pd.DataFrame(S_matrix, columns=[f"t{j}" for j in range(n_common_points)])
     df_full.insert(0, "p_indels", p_indels_arr)
     df_full.insert(0, "p_SNV",    p_snv_arr)
     df_full.to_csv(os.path.join(full_outdir, "S_matrix.csv"), index=False)
+
+    df_organ_full = pd.DataFrame(S_organ_matrix, columns=[f"t{j}" for j in range(n_common_points)])
+    df_organ_full.insert(0, "p_indels", p_indels_arr)
+    df_organ_full.insert(0, "p_SNV",    p_snv_arr)
+    df_organ_full.to_csv(os.path.join(full_outdir, "S_organ_matrix.csv"), index=False)
 
     _plot_survival_bands(t_vals, df_bands, label, full_outdir)
     _plot_survival_by_mu(t_vals, S_matrix, mu_mean_arr, label, full_outdir)
@@ -200,7 +220,8 @@ def run_sensitivity_p_lethal(
     }
 
 def _sensitivity_model_ii(
-        params, mu_mean_arr, mu_std_arr, t_vals, S_bg, n_mc, seed, S_matrix
+        params, mu_mean_arr, mu_std_arr, t_vals, S_bg, n_mc, seed,
+        S_matrix, S_organ_matrix
 ):
     x_crit  = params["x_c"]
     x0_mean = params["x0_mean"]
@@ -215,8 +236,10 @@ def _sensitivity_model_ii(
 
         thresholds = x_crit * np.exp(np.outer(mu_samp, t_vals))
         np.clip(thresholds, None, 1e300, out=thresholds)
-        S_organ_per_mu = 1.0 - _lognorm.cdf(thresholds, s=K_sigma, scale=np.exp(K_ln))
-        S_matrix[i] = np.mean(S_organ_per_mu, axis=0) * S_bg
+        S_organ_per_mu      = 1.0 - _lognorm.cdf(thresholds, s=K_sigma, scale=np.exp(K_ln))
+        S_organ             = np.mean(S_organ_per_mu, axis=0)
+        S_organ_matrix[i]   = S_organ
+        S_matrix[i]         = S_organ * S_bg
 
         if (i + 1) % max(1, len(mu_mean_arr) // 5) == 0:
             print(f"  sample {i + 1}/{len(mu_mean_arr)}")
@@ -225,7 +248,8 @@ def _sensitivity_model_ii(
 def _sensitivity_model_iii(
         organ, organ_s, params,
         mu_mean_arr, mu_std_arr, mu_s_mean_arr, mu_s_std_arr,
-        t_vals, S_bg, t_max, n_mc, n_workers, seed, S_matrix
+        t_vals, S_bg, t_max, n_mc, n_workers, seed,
+        S_matrix, S_organ_matrix
 ):
     from src.utils.ode_sim import monte_carlo_parallel
     from src.utils.rhs_factory import rhs_base
@@ -260,8 +284,9 @@ def _sensitivity_model_iii(
         censored    = np.isnan(death_times)
         event_times = np.where(censored, t_max, death_times)
         km_t, km_s, _, _, _, _ = kaplan_meier(event_times, censored)
-        km_interp   = np.interp(t_vals, km_t, km_s, left=1.0, right=float(km_s[-1]))
-        S_matrix[i] = km_interp * S_bg
+        km_interp         = np.interp(t_vals, km_t, km_s, left=1.0, right=float(km_s[-1]))
+        S_organ_matrix[i] = km_interp
+        S_matrix[i]       = km_interp * S_bg
 
         if (i + 1) % max(1, len(mu_mean_arr) // 5) == 0:
             print(f"  sample {i + 1}/{len(mu_mean_arr)}")

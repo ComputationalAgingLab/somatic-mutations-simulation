@@ -94,8 +94,15 @@ def run_model_iii(organ_x: str,
                     for p in (2.5, 10, 25, 50, 75, 90, 97.5)}
     pd.DataFrame([perc_summary]).to_csv(os.path.join(full_outdir, "death_time_percentiles.csv"), index=False)
 
+    lambda_bg = cfg.lambda_bg
+    S_bg_km   = np.exp(-lambda_bg * km_t)
+    km_s_combined = km_s * S_bg_km
+
     thresholds = [0.5, 0.01, 0.001, 1e-4, 1e-5, 1e-6, 1e-7, 1 / N]
     compute_threshold_times(km_s, km_t, thresholds).to_csv(
+        os.path.join(full_outdir, "threshold_crossing_times_organ.csv"), index=False
+    )
+    compute_threshold_times(km_s_combined, km_t, thresholds).to_csv(
         os.path.join(full_outdir, "threshold_crossing_times.csv"), index=False
     )
 

@@ -94,6 +94,9 @@ def run_model_ii(organ: str,
     df_bands.to_csv(os.path.join(full_outdir, "survival_percentiles.csv"), index=False)
 
     thresholds = [0.5, 0.01, 0.001, 1e-4, 1e-5, 1e-6, 1e-7, 1 / N]
+    compute_threshold_times(S_organ, t_vals, thresholds).to_csv(
+        os.path.join(full_outdir, "threshold_crossing_times_organ.csv"), index=False
+    )
     compute_threshold_times(S_total, t_vals, thresholds).to_csv(
         os.path.join(full_outdir, "threshold_crossing_times.csv"), index=False
     )
